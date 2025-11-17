@@ -53,3 +53,20 @@ Notes:
    .\venv\Scripts\python.exe -m pip install --upgrade pip setuptools wheel
    .\venv\Scripts\python.exe -m pip install Pillow
    ```
+
+## 🚀 Deployment on Render
+
+BlogPro is ready to deploy on Render! See deployment documentation:
+
+- **[RENDER_QUICK_START.md](RENDER_QUICK_START.md)** - Quick 5-minute deployment guide (START HERE!)
+- **[RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md)** - Comprehensive deployment guide
+- **[RENDER_DEPLOYMENT_CHECKLIST.md](RENDER_DEPLOYMENT_CHECKLIST.md)** - Detailed checklist and troubleshooting
+- **[RENDER_DEPLOYMENT_OVERVIEW.md](RENDER_DEPLOYMENT_OVERVIEW.md)** - Complete overview with visuals
+
+All necessary configuration files are included:
+- `render.yaml` - Render service configuration
+- `.env.example` - Environment variables template
+- `settings.py` - Already configured for production
+
+**Deploy in ~5 minutes:** Go to https://dashboard.render.com, connect your GitHub repo, and deploy!
+
