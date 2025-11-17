@@ -1,0 +1,13 @@
+<svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon Circle -->
+  <circle cx="25" cy="25" r="20" fill="#0ea5e9" opacity="0.9"/>
+  
+  <!-- Letter M in white -->
+  <path d="M 15 38 L 15 15 L 20 22 L 25 15 L 30 15 L 30 38 M 18 25 L 25 25" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Text BlogPro -->
+  <text x="60" y="32" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#0ea5e9">BlogPro</text>
+  
+  <!-- Underline accent -->
+  <line x1="60" y1="38" x2="155" y2="38" stroke="#06b6d4" stroke-width="2"/>
+</svg>

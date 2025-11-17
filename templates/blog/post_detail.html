@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block extra_head %}
+<!-- Font Awesome (if not already in base.html) -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+/>
+
+<style>
+  .like-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s ease;
+  }
+
+  .like-button:hover {
+    transform: scale(1.15);
+  }
+
+  /* Default heart (visible even when not liked) */
+  .like-button .fa-heart {
+    color: #d1d5db; /* light gray */
+    transition: color 0.3s ease, transform 0.2s ease, filter 0.3s ease;
+  }
+
+  /* When liked */
+  .like-button.liked .fa-heart {
+    color: #ff4b6e; /* pinkish red */
+    filter: drop-shadow(0 0 8px rgba(255, 75, 110, 0.7));
+    transform: scale(1.25);
+  }
+
+  /* Click animation */
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1.15); }
+  }
+  .like-button.pop .fa-heart { animation: pop 250ms ease forwards; }
+
+  .card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    border-radius: 1rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  }
+
+  /* Comment form styling */
+  #id_content {
+    background: white !important;
+    color: #1f2937 !important;
+    border: 2px solid #e5e7eb !important;
+    padding: 0.75rem !important;
+    border-radius: 0.5rem !important;
+    font-family: inherit !important;
+    min-height: 100px !important;
+    resize: vertical !important;
+  }
+
+  #id_content:focus {
+    outline: none !important;
+    border-color: #0ea5e9 !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1) !important;
+    background: white !important;
+    color: #1f2937 !important;
+  }
+
+  #id_content::placeholder {
+    color: #9ca3af !important;
+  }
+</style>
+
+<script>
+  // CSRF helper
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    const btn = document.getElementById('like-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', async function(e){
+      e.preventDefault();
+      const slug = btn.dataset.slug;
+      const url = `/post/${slug}/like/ajax/`;
+      const csrftoken = getCookie('csrftoken');
+
+      try {
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: {'X-CSRFToken': csrftoken},
+          credentials: 'same-origin'
+        });
+
+        if (!resp.ok) {
+          if (resp.status === 403) {
+            window.location = '/accounts/login/?next=' + encodeURIComponent(window.location.pathname);
+            return;
+          }
+          console.error('Like request failed', resp.status);
+          return;
+        }
+
+        const data = await resp.json();
+        const countEl = document.getElementById('like-count');
+        const icon = document.getElementById('like-icon');
+
+        if (typeof data.count !== 'undefined') countEl.textContent = data.count;
+
+        if (data.liked) {
+          icon.classList.remove('fa-regular');
+          icon.classList.add('fa-solid');
+          btn.classList.add('liked', 'pop');
+          setTimeout(() => btn.classList.remove('pop'), 350);
+        } else {
+          icon.classList.remove('fa-solid');
+          icon.classList.add('fa-regular');
+          btn.classList.remove('liked');
+        }
+      } catch (err) {
+        console.error('Like error', err);
+      }
+    });
+  });
+</script>
+{% endblock %}
+
+{% block content %}
+<article class="py-8">
+  <div class="card p-6">
+    {% if post.featured_image %}
+      <img src="{{ post.featured_image.url }}" class="w-full h-64 object-cover rounded-lg mb-4">
+    {% endif %}
+
+    <h1 class="text-3xl font-bold text-cyan-100">{{ post.title }}</h1>
+  <div class="text-sm text-slate-400 mt-2 flex items-center justify-between">
+    <div>By <a href="{% url 'profile_detail' post.author.username %}" class="text-slate-300 hover:text-cyan-400">{{ post.author.username }}</a> • {{ post.published_at|date:'M d, Y' }}</div>
+    {% if request.user == post.author or request.user.is_staff %}
+      <div class="flex gap-2">
+        <a href="{% url 'post_edit' post.slug %}" class="text-sm px-3 py-1 bg-cyan-500 hover:bg-cyan-600 text-slate-900 font-semibold rounded-lg transition inline-flex items-center gap-2">
+          <i class="fa-regular fa-pen-to-square"></i>Edit
+        </a>
+        <a href="{% url 'post_delete' post.slug %}" class="text-sm px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition inline-flex items-center gap-2">
+          <i class="fa-solid fa-trash"></i>Delete
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+    <div class="mt-4 prose max-w-none">{{ post.content|linebreaks }}</div>
+
+    <div class="mt-6 flex items-center gap-6">
+      <!-- Heart Button -->
+      <div class="flex items-center gap-2 text-sm text-slate-300">
+        {% if liked_by_user %}
+          <button id="like-btn" data-slug="{{ post.slug }}" class="like-button liked text-red-500" aria-label="Unlike this post">
+            <i id="like-icon" class="fa-solid fa-heart fa-xl"></i>
+          </button>
+        {% else %}
+          <button id="like-btn" data-slug="{{ post.slug }}" class="like-button text-slate-400 hover:text-red-500 transition" aria-label="Like this post">
+            <i id="like-icon" class="fa-regular fa-heart fa-xl"></i>
+          </button>
+        {% endif %}
+        <span id="like-count">{{ post.likes.count }}</span>
+      </div>
+
+      <!-- Tags -->
+      <div class="flex items-center gap-2 text-sm text-slate-400">
+        <i class="fa-solid fa-tags"></i>
+        <div class="flex gap-2 flex-wrap">
+          {% for t in post.tags.all %}
+            <a href="{% url 'tag_posts' t.slug %}"
+              class="px-2 py-1 rounded-full bg-gradient-to-r from-sky-700 via-cyan-600 to-slate-700 text-cyan-100 hover:from-sky-600 hover:to-cyan-500 transition">
+              {{ t.name }}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comments -->
+  <section class="mt-8 max-w-4xl mx-auto px-4">
+    <div class="card p-6 border border-cyan-500/40">
+      <h3 class="text-xl font-semibold text-cyan-100 mb-4">💬 Comments</h3>
+      
+      <!-- Existing Comments -->
+      <div class="space-y-4 mb-6 max-h-96 overflow-y-auto">
+        {% for comment in post.comments.all %}
+          <div class="bg-slate-700/30 border-l-4 border-cyan-500 p-4 rounded">
+            <div class="text-sm font-semibold text-cyan-300">
+              {% if comment.user %}{{ comment.user.username }}{% else %}Anonymous{% endif %}
+            </div>
+            <div class="text-sm text-slate-300 mt-1">{{ comment.content }}</div>
+          </div>
+        {% empty %}
+          <p class="text-sm text-slate-400 italic">No comments yet. Be the first to comment!</p>
+        {% endfor %}
+      </div>
+
+      <!-- Add Comment Form -->
+      {% if user.is_authenticated %}
+        <div class="border-t border-cyan-500/30 pt-6">
+          <h4 class="text-md font-semibold text-cyan-100 mb-4">Leave a Comment</h4>
+          <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            <div class="bg-white/95 p-4 rounded-lg shadow">
+              <label class="block text-gray-800 font-semibold text-sm mb-2">Your Comment</label>
+              {{ comment_form.content }}
+              {% if comment_form.content.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ comment_form.content.errors }}</p>
+              {% endif %}
+            </div>
+            
+            <button type="submit" class="px-6 py-2 rounded-lg bg-gradient-to-r from-sky-600 via-cyan-500 to-slate-600 text-slate-900 font-semibold hover:scale-105 transition inline-flex items-center gap-2">
+              <i class="fa-solid fa-paper-plane"></i>Post Comment
+            </button>
+          </form>
+        </div>
+      {% else %}
+        <div class="border-t border-cyan-500/30 pt-6 text-center">
+          <p class="text-slate-300 mb-3">Want to join the discussion?</p>
+          <a href="{% url 'login' %}" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-slate-900 font-semibold inline-flex items-center gap-2 transition">
+            <i class="fa-solid fa-sign-in-alt"></i>Login to Comment
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+</article>
+{% endblock %}

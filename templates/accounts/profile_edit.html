@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Edit Profile{% endblock %}
+{% block content %}
+<section class="py-12 px-4 max-w-3xl mx-auto">
+  <div class="bg-slate-800/60 backdrop-blur rounded-2xl p-8 shadow-lg border border-cyan-500/40">
+    <h2 class="text-3xl font-bold text-cyan-100 mb-8">Edit Your Profile</h2>
+    
+    <form method="post" enctype="multipart/form-data" class="space-y-8">
+      {% csrf_token %}
+      
+      <!-- Avatar Section -->
+      <div class="space-y-3">
+        <label class="block text-sm font-semibold text-cyan-300">
+          <i class="fa-solid fa-image"></i> Profile Picture
+        </label>
+        
+        <!-- Current Avatar Preview -->
+        {% if form.instance.avatar %}
+          <div class="mb-4">
+            <p class="text-xs text-slate-400 mb-3">Current avatar:</p>
+            <div class="w-40 h-40 rounded-full overflow-hidden ring-4 ring-cyan-400 shadow-2xl bg-slate-700">
+              <img src="{{ form.instance.avatar.url }}" alt="current avatar" class="w-full h-full object-cover">
+            </div>
+          </div>
+        {% endif %}
+        
+        <!-- File Input with enhanced styling -->
+        <div class="relative">
+          <input type="file" name="avatar" id="{{ form.avatar.id_for_label }}" accept="image/*" class="w-full px-4 py-3 border-2 border-dashed border-cyan-500/50 rounded-lg focus:outline-none focus:border-cyan-400 bg-slate-900/50 text-slate-300 file:bg-gradient-to-r file:from-sky-600 file:to-cyan-600 file:text-white file:px-4 file:py-2 file:rounded file:border-0 file:font-semibold file:cursor-pointer hover:file:from-sky-500 hover:file:to-cyan-500 transition cursor-pointer">
+          <p class="text-xs text-slate-400 mt-2">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Drop your image here or click to browse (Max: 2.5 MB)
+          </p>
+        </div>
+        
+        <!-- Display form errors -->
+        {% if form.avatar.errors %}
+          <div class="bg-red-500/20 border border-red-500/50 text-red-300 px-3 py-2 rounded text-sm">
+            {% for error in form.avatar.errors %}
+              {{ error }}
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+      
+      <!-- Bio Section -->
+      <div class="space-y-3">
+        <label class="block text-sm font-semibold text-cyan-300">
+          <i class="fa-solid fa-pen"></i> Bio
+        </label>
+        <p class="text-xs text-slate-400">Tell people about yourself (up to 500 characters)</p>
+        
+        <!-- Textarea with black background for black text -->
+        <textarea name="bio" id="{{ form.bio.id_for_label }}" rows="5" placeholder="Write something about yourself..." maxlength="500" class="w-full px-4 py-3 border-2 border-cyan-500/40 rounded-lg focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 bg-white text-black placeholder-slate-500 resize-none transition">{{ form.instance.bio|default:'' }}</textarea>
+        
+        <!-- Character counter -->
+        <div class="flex justify-between items-center text-xs text-slate-400">
+          <span id="char-count">0 / 500</span>
+          {% if form.bio.errors %}
+            <div class="text-red-400">
+              {% for error in form.bio.errors %}
+                {{ error }}
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div class="flex gap-4 pt-4">
+        <button type="submit" class="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-sky-600 via-cyan-500 to-slate-600 hover:from-sky-500 hover:via-cyan-400 hover:to-slate-500 text-slate-900 font-semibold shadow-lg hover:shadow-xl transition transform hover:scale-105 inline-flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check"></i> Save Changes
+        </button>
+        <a href="{% url 'profile_detail' request.user.username %}" class="flex-1 px-6 py-3 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-slate-100 font-semibold shadow-lg transition inline-flex items-center justify-center gap-2">
+          <i class="fa-solid fa-times"></i> Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- Character counter script -->
+<script>
+  const bioTextarea = document.getElementById('{{ form.bio.id_for_label }}');
+  const charCount = document.getElementById('char-count');
+  
+  function updateCharCount() {
+    charCount.textContent = bioTextarea.value.length + ' / 500';
+  }
+  
+  bioTextarea.addEventListener('input', updateCharCount);
+  updateCharCount(); // Initialize on page load
+</script>
+
+{% endblock %}
